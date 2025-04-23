@@ -16,14 +16,11 @@ class UserModelTest extends TestCase {
 
     public function testInsertUser() {
 
-        $db = Database::connect('tests');
         $model = new UserModel();
-        $model->setDatabase($db);
 
         $data = [
             'name' => 'Jamila Dahi', 
-            'email' => 'jda@gk.mt'
-        ];
+            'email' => 'jda@gk.mt'];
 
         $id = $model->insert($data);
 
