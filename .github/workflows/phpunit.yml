@@ -16,15 +16,10 @@ jobs:
       mysql:
         image: mysql:5.7
         env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: tests
+          MYSQL_ROOT_PASSWORD: ""
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"  # Autorise une connexion sans mot de passe
         ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping --silent"
-          --health-start-period=30s
-          --health-timeout=5s
-          --health-retries=3
+          - "3306:3306"
 
     steps:
     # Checkout the code
@@ -48,16 +43,14 @@ jobs:
         echo "DB_DEFAULT_HOSTNAME=127.0.0.1" >> $GITHUB_ENV
         echo "DB_DEFAULT_DATABASE=tests" >> $GITHUB_ENV
         echo "DB_DEFAULT_USERNAME=root" >> $GITHUB_ENV
-        echo "DB_DEFAULT_PASSWORD=root" >> $GITHUB_ENV
+        echo "DB_DEFAULT_PASSWORD=" >> $GITHUB_ENV
         echo "DB_DEFAULT_DBDriver=MySQLi" >> $GITHUB_ENV
 
     # Wait for MySQL service to be ready
-    - name: Wait for MySQL
+    - name: Test MySQL connection
       run: |
-        until mysql -h 127.0.0.1 -u root -proot -e "SHOW DATABASES;"; do
-          echo "Waiting for database..."
-          sleep 5
-        done
+        mysql -h 127.0.0.1 -u root -e "SHOW DATABASES;"
+  
 
     # Run PHPUnit tests
     - name: Run PHPUnit tests
