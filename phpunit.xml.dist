@@ -10,6 +10,18 @@
     failOnRisky="true"
     failOnWarning="true"
     cacheDirectory="build/.phpunit.cache">
+    <!--<coverage
+        includeUncoveredFiles="true"
+        pathCoverage="false"
+        ignoreDeprecatedCodeUnits="true"
+        disableCodeCoverageIgnore="true">
+        <report>
+            <clover outputFile="build/logs/clover.xml"/>
+            <html outputDirectory="build/logs/html"/>
+            <php outputFile="build/logs/coverage.serialized"/>
+            <text outputFile="php://stdout" showUncoveredFiles="false"/>
+        </report>
+    </coverage>-->
     <testsuites>
         <testsuite name="App">
             <directory>./tests</directory>
@@ -20,20 +32,30 @@
         <testdoxText outputFile="build/logs/testdox.txt"/>
         <junit outputFile="build/logs/logfile.xml"/>
     </logging>
+    <source>
+        <include>
+            <directory suffix=".php">./app</directory>
+        </include>
+        <exclude>
+            <directory suffix=".php">./app/Views</directory>
+            <file>./app/Config/Routes.php</file>
+        </exclude>
+    </source>
     <php>
-        <server name="app.baseURL" value="http://example.com/"/>
-        <server name="CODEIGNITER_SCREAM_DEPRECATIONS" value="0"/>
+    <server name="app.baseURL" value="http://example.com/"/>
+    <server name="CODEIGNITER_SCREAM_DEPRECATIONS" value="0"/>
 
-        <const name="HOMEPATH" value="./"/>
-        <const name="CONFIGPATH" value="./app/Config/"/>
-        <const name="PUBLICPATH" value="./public/"/>
+    <const name="HOMEPATH" value="./"/>
+    <const name="CONFIGPATH" value="./app/Config/"/>
+    <const name="PUBLICPATH" value="./public/"/>
 
-        <!-- Configuration de la base de données MySQL pour les tests -->
-        <env name="DB.default.hostname" value="127.0.0.1"/>
-        <env name="DB.default.database" value="tests"/>
-        <env name="DB.default.username" value="root"/>
-        <env name="DB.default.password" value=""/>
-        <env name="DB.default.DBDriver" value="MySQLi"/>
-        <env name="DB.default.DBPrefix" value=""/>
-    </php>
+    <!-- Configuration de la base de données MySQL de test -->
+    <env name="DB.default.hostname" value="127.0.0.1"/>
+    <env name="DB.default.database" value="tests"/>
+    <env name="DB.default.username" value="root"/>
+    <env name="DB.default.password" value=""/>
+    <env name="DB.default.DBDriver" value="MySQLi"/>
+    <env name="DB.default.DBPrefix" value=""/>
+</php>
+
 </phpunit>
