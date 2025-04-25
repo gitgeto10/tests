@@ -1,4 +1,4 @@
-name: PHP CI
+name: CI Workflow
 
 on:
   push:
@@ -9,49 +9,46 @@ on:
       - main
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     services:
       mysql:
-        image: mysql:5.7
+        image: mysql:latest
         env:
-          MYSQL_ROOT_PASSWORD: ""
-          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"  # Autorise une connexion sans mot de passe
+          MYSQL_ROOT_PASSWORD: ''
+          MYSQL_DATABASE: tests
         ports:
-          - "3306:3306"
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping --silent" --health-timeout=30s --health-retries=5
 
     steps:
-    # Checkout the code
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    # Set up PHP
-    - name: Set up PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.1'
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'  # Utiliser la version PHP souhaitée
+          extensions: mysqli,xdebug
 
-    # Install dependencies
-    - name: Install dependencies
-      run: |
-        composer install --no-interaction
+      - name: Install dependencies
+        run: |
+          composer install
 
-    # Configure environment variables for DB
-    - name: Set up DB environment variables
-      run: |
-        echo "DB_DEFAULT_HOSTNAME=127.0.0.1" >> $GITHUB_ENV
-        echo "DB_DEFAULT_DATABASE=tests" >> $GITHUB_ENV
-        echo "DB_DEFAULT_USERNAME=root" >> $GITHUB_ENV
-        echo "DB_DEFAULT_PASSWORD=" >> $GITHUB_ENV
-        echo "DB_DEFAULT_DBDriver=MySQLi" >> $GITHUB_ENV
+      - name: Wait for MySQL to be ready
+        run: |
+          until mysql -h 127.0.0.1 -u root -p'' -e 'SELECT 1'; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
 
-    # Wait for MySQL service to be ready
-    - name: Test MySQL connection
-      run: |
-        mysql -h 127.0.0.1 -u root -e "SHOW DATABASES;"
-  
+      - name: Set up database
+        run: |
+          mysql -h 127.0.0.1 -u root -p'' -e "CREATE DATABASE IF NOT EXISTS test;"
+          mysql -h 127.0.0.1 -u root -p'' test < path/to/your/sql/schema.sql  # Importez votre schéma SQL ici si nécessaire
 
-    # Run PHPUnit tests
-    - name: Run PHPUnit tests
-      run: php vendor/bin/phpunit --configuration phpunit.xml.dist
+      - name: Run PHPUnit tests
+        run: |
+          ./vendor/bin/phpunit --configuration phpunit.xml --coverage-html coverage
+
