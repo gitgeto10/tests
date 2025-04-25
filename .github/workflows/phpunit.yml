@@ -1,48 +1,48 @@
 name: Run PHPUnit tests
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: [push, pull_request]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     services:
       mysql:
-        image: mysql:8.0
-        ports:
-          - 3306:3306
+        image: mysql:5.7
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
-          MYSQL_ROOT_PASSWORD: ""
           MYSQL_DATABASE: tests
+          MYSQL_USER: root
+        ports:
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping --silent"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=3
+          --health-retries=5
 
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.1'
-        extensions: mbstring, intl, pdo_mysql
-        coverage: none
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.1.2
+          extensions: pdo_mysql, mysqli
+          ini-values: post_max_size=256M, upload_max_filesize=256M
+          coverage: none
 
-    - name: Install dependencies
-      run: composer install
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist
 
-    - name: Wait for MySQL
-      run: sleep 15
+      - name: Wait for MySQL to be ready
+        run: |
+          for i in {1..30}; do
+            mysql -h 127.0.0.1 -u root -e "SHOW DATABASES;" && break
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
 
-    - name: (Optionnel) Créer les tables
-      run: |
-        mysql -h 127.0.0.1 -u root tests < tests/_support/schema.sql || echo "No schema.sql file found"
-
-    - name: Run PHPUnit tests
-      run: vendor/bin/phpunit --configuration phpunit.xml.dist
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit --configuration phpunit.xml.dist
