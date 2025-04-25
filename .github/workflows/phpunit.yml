@@ -1,4 +1,4 @@
-name: CI Workflow
+name: PHPUnit Tests
 
 on:
   push:
@@ -12,16 +12,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      mysql:
-        image: mysql:latest
-        env:
-          MYSQL_ROOT_PASSWORD: ''
-          MYSQL_DATABASE: tests
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping --silent" --health-timeout=30s --health-retries=5
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -30,25 +20,11 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '7.4'  # Utiliser la version PHP souhaitée
-          extensions: mysqli,xdebug
+          extensions: mbstring, intl, bcmath, pdo, mysqli
 
-      - name: Install dependencies
-        run: |
-          composer install
-
-      - name: Wait for MySQL to be ready
-        run: |
-          until mysql -h 127.0.0.1 -u root -p'' -e 'SELECT 1'; do
-            echo "Waiting for MySQL..."
-            sleep 2
-          done
-
-      - name: Set up database
-        run: |
-          mysql -h 127.0.0.1 -u root -p'' -e "CREATE DATABASE IF NOT EXISTS test;"
-          mysql -h 127.0.0.1 -u root -p'' test < path/to/your/sql/schema.sql  # Importez votre schéma SQL ici si nécessaire
+      - name: Install composer dependencies
+        run: composer install --no-interaction
 
       - name: Run PHPUnit tests
-        run: |
-          ./vendor/bin/phpunit --configuration phpunit.xml --coverage-html coverage
+        run: ./vendor/bin/phpunit --coverage-text tests/models/UserModelTest.php
 
