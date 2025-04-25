@@ -1,6 +1,12 @@
-name: Run PHPUnit tests
+name: PHPUnit Tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   test:
@@ -10,39 +16,32 @@ jobs:
       mysql:
         image: mysql:5.7
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_ROOT_PASSWORD: ""
           MYSQL_DATABASE: tests
-          MYSQL_USER: root
         ports:
           - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+        options: --health-cmd="mysqladmin ping --silent" --health-timeout=30s --health-retries=3
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.1.2
-          extensions: pdo_mysql, mysqli
-          ini-values: post_max_size=256M, upload_max_filesize=256M
-          coverage: none
+          php-version: '8.1'
+          extensions: mysqli
 
       - name: Install dependencies
-        run: composer install --no-progress --prefer-dist
+        run: |
+          composer install --no-interaction
 
       - name: Wait for MySQL to be ready
         run: |
-          for i in {1..30}; do
-            mysql -h 127.0.0.1 -u root -e "SHOW DATABASES;" && break
-            echo "Waiting for MySQL..."
-            sleep 2
+          while ! mysqladmin ping -h127.0.0.1 --silent; do
+            sleep 1
           done
 
-      - name: Run PHPUnit
-        run: vendor/bin/phpunit --configuration phpunit.xml.dist
+      - name: Run PHPUnit tests
+        run: |
+          vendor/bin/phpunit --configuration phpunit.xml
