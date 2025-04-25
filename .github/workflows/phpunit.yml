@@ -1,32 +1,48 @@
-name: PHPUnit Tests
+name: Run PHPUnit tests
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
-  phpunit:
+  test:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_ROOT_PASSWORD: ""
+          MYSQL_DATABASE: tests
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1.2'  # Remplacez avec la version PHP appropriée
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+        extensions: mbstring, intl, pdo_mysql
+        coverage: none
 
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y libxml2-dev
-          composer install
+    - name: Install dependencies
+      run: composer install
 
-      - name: Run PHPUnit tests
-        run: |
-          vendor/bin/phpunit --configuration phpunit.xml.dist
+    - name: Wait for MySQL
+      run: sleep 15
+
+    - name: (Optionnel) Créer les tables
+      run: |
+        mysql -h 127.0.0.1 -u root tests < tests/_support/schema.sql || echo "No schema.sql file found"
+
+    - name: Run PHPUnit tests
+      run: vendor/bin/phpunit --configuration phpunit.xml.dist
