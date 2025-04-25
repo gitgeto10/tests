@@ -1,4 +1,4 @@
-name: PHPUnit Tests
+name: PHP CI
 
 on:
   push:
@@ -9,39 +9,56 @@ on:
       - main
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     services:
       mysql:
         image: mysql:5.7
         env:
-          MYSQL_ROOT_PASSWORD: ""
+          MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: tests
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping --silent" --health-timeout=30s --health-retries=3
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-start-period=30s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    # Checkout the code
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          extensions: mysqli
+    # Set up PHP
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
 
-      - name: Install dependencies
-        run: |
-          composer install --no-interaction
+    # Install dependencies
+    - name: Install dependencies
+      run: |
+        composer install --no-interaction
 
-      - name: Wait for MySQL to be ready
-        run: |
-          while ! mysqladmin ping -h127.0.0.1 --silent; do
-            sleep 1
-          done
+    # Configure environment variables for DB
+    - name: Set up DB environment variables
+      run: |
+        echo "DB_DEFAULT_HOSTNAME=127.0.0.1" >> $GITHUB_ENV
+        echo "DB_DEFAULT_DATABASE=tests" >> $GITHUB_ENV
+        echo "DB_DEFAULT_USERNAME=root" >> $GITHUB_ENV
+        echo "DB_DEFAULT_PASSWORD=root" >> $GITHUB_ENV
+        echo "DB_DEFAULT_DBDriver=MySQLi" >> $GITHUB_ENV
 
-      - name: Run PHPUnit tests
-        run: |
-          vendor/bin/phpunit --configuration phpunit.xml
+    # Wait for MySQL service to be ready
+    - name: Wait for MySQL
+      run: |
+        until mysql -h 127.0.0.1 -u root -proot -e "SHOW DATABASES;"; do
+          echo "Waiting for database..."
+          sleep 5
+        done
+
+    # Run PHPUnit tests
+    - name: Run PHPUnit tests
+      run: php vendor/bin/phpunit --configuration phpunit.xml.dist
