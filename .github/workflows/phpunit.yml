@@ -28,7 +28,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y mysql-server
         sudo service mysql start
+    
+        # Configurer MySQL pour autoriser la connexion sans mot de passe pour l'utilisateur root
+        sudo mysql -e "UPDATE mysql.user SET authentication_string=PASSWORD('') WHERE User='root';"
+        sudo mysql -e "FLUSH PRIVILEGES;"
+    
+        # Créer la base de données de tests si elle n'existe pas
         sudo mysql -e "CREATE DATABASE IF NOT EXISTS tests;"
+      
 
     - name: Install dependencies
       run: |
