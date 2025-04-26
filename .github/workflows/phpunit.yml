@@ -1,4 +1,4 @@
-name: PHPUnit Tests
+name: Run PHPUnit Tests
 
 on:
   push:
@@ -9,22 +9,24 @@ on:
       - main
 
 jobs:
-  test:
+  phpunit:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '7.4'  # Utiliser la version PHP souhaitée
-          extensions: mbstring, intl, bcmath, pdo, mysqli
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+        extensions: mbstring, mysqli, xdebug
+        coverage: xdebug
 
-      - name: Install composer dependencies
-        run: composer install --no-interaction
+    - name: Install dependencies
+      run: |
+        composer install
 
-      - name: Run PHPUnit tests
-        run: ./vendor/bin/phpunit --coverage-text tests/models/UserModelTest.php
-
+    - name: Run PHPUnit tests
+      run: |
+        ./vendor/bin/phpunit --coverage-text
