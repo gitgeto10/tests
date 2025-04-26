@@ -93,4 +93,4 @@ jobs:
         run: |
           ./vendor/bin/phpunit --coverage-text tests/Models/UserModelTest.php
           ./vendor/bin/phpunit --coverage-text tests/Models/BonLivraisonModelTest.php 
-      
+          ./vendor/bin/phpunit --coverage-text tests/Models/LigneBonLivraisonModelTest.php 
