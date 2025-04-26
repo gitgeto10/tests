@@ -10,6 +10,16 @@ jobs:
   php-tests:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: ""  # Définit un mot de passe pour root
+          MYSQL_DATABASE: tests              # Base de données à utiliser
+        ports:
+          - 3306:3306  # Expose le port MySQL
+        options: --health-cmd="mysqladmin ping --silent" --health-timeout=30s --health-retries=5
+
     steps:
       - uses: actions/checkout@v3
 
@@ -17,11 +27,25 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
-          extensions: mbstring, intl, sqlite3
+          extensions: mbstring, intl, sqlite3, mysqli, pdo_mysql
           coverage: xdebug
 
       - name: Install dependencies
         run: composer install --no-progress --prefer-dist
+
+      - name: Wait for MySQL to be ready
+        run: |
+          echo "Waiting for MySQL to be ready..."
+          until mysqladmin ping -h"127.0.0.1" --silent; do
+            sleep 1
+          done
+
+      - name: Configure Database for CodeIgniter
+        run: |
+          # Connect to MySQL and create the database if it doesn't exist
+          mysql -u root -proot_password -e "CREATE DATABASE IF NOT EXISTS tests;"
+          # Si tu utilises des migrations, exécute-les ici
+          php spark migrate --force
 
       - name: Run PHPUnit
         run: vendor/bin/phpunit --configuration phpunit.xml.dist --testsuite default
