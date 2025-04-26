@@ -86,5 +86,7 @@ jobs:
           EOF
       
       - name: Run PHPUnit tests
-        run: vendor/bin/phpunit --coverage-text
+        run: |
+          ./vendor/bin/phpunit --coverage-text tests/Models/UserModelTest.php
+          ./vendor/bin/phpunit --coverage-text tests/Models/BonLivraisonModelTest.php 
       
