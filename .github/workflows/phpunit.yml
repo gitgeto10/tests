@@ -74,7 +74,7 @@ jobs:
             id_bonlivraison int(11) DEFAULT NULL,
             designation varchar(255) DEFAULT NULL,
             quantity int(11) DEFAULT NULL
-          )
+          );
           EOF
       
       - name: Configure environment
