@@ -1,53 +1,27 @@
-name: CI with MySQL
+name: CI CodeIgniter
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   pull_request:
-    branches:
-      - main
+    branches: [ "main" ]
 
 jobs:
-  test:
+  php-tests:
     runs-on: ubuntu-latest
 
-    services:
-      mysql:
-        image: mysql:8
-        env:
-          MYSQL_ROOT_PASSWORD: ""
-          MYSQL_DATABASE: tests
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping --silent" --health-timeout=30s --health-retries=5
-
     steps:
-      # Etape 1 : Checkout du code
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      # Etape 2 : Installation des dépendances (si nécessaire)
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.0'
-          extensions: mysqli, pdo_mysql
+          php-version: '8.1'
+          extensions: mbstring, intl, sqlite3
+          coverage: xdebug
 
       - name: Install dependencies
-        run: |
-          composer install --no-interaction --prefer-dist
+        run: composer install --no-progress --prefer-dist
 
-      # Etape 3 : Attente que MySQL soit prêt
-      - name: Wait for MySQL to be ready
-        run: |
-          echo "Waiting for MySQL to be ready..."
-          until mysqladmin ping -h"127.0.0.1" --silent; do
-            sleep 1
-          done
-
-      # Etape 4 : Exécuter les tests
-      - name: Run tests
-        run: |
-          php artisan migrate --force
-          php vendor/bin/phpunit --configuration phpunit.xml
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit --configuration phpunit.xml.dist --testsuite default
