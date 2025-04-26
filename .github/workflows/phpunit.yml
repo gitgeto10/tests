@@ -1,4 +1,4 @@
-name: PHPUnit Tests UserModel
+name: PHPUnit Tests UserModel + BonLivraisonModel
 
 on:
   push:
@@ -63,13 +63,18 @@ jobs:
             sleep 2
           done
 
-      - name: Create users table
+      - name: Create necessary tables
         run: |
           mysql -h 127.0.0.1 -P 3306 -u root tests -e "
           CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             email VARCHAR(255) NOT NULL
+          );
+          CREATE TABLE IF NOT EXISTS bonlivraison (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            status VARCHAR(50) NOT NULL,
+            delivery_date DATE NOT NULL
           );
           "
 
@@ -90,4 +95,6 @@ jobs:
           echo "database.tests.port = 3306" >> .env
 
       - name: Run PHPUnit tests
-        run: ./vendor/bin/phpunit --coverage-text tests/Models/UserModelTest.php
+        run: |
+          ./vendor/bin/phpunit --coverage-text tests/Models/UserModelTest.php
+          ./vendor/bin/phpunit --coverage-text tests/Models/BonLivraisonModelTest.php
