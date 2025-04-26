@@ -1,10 +1,12 @@
-name: CI CodeIgniter
+name: PHP Tests with MySQL
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   php-tests:
@@ -12,22 +14,23 @@ jobs:
 
     services:
       mysql:
-        image: mysql:8
+        image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: ""  # Définit un mot de passe pour root
-          MYSQL_DATABASE: tests              # Base de données à utiliser
+          MYSQL_ROOT_PASSWORD: ""  # Mot de passe vide
+          MYSQL_DATABASE: tests    # Nom de la base de données
         ports:
-          - 3306:3306  # Expose le port MySQL
-        options: --health-cmd="mysqladmin ping --silent" --health-timeout=30s --health-retries=5
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping --silent" --health-start-period=30s --health-timeout=30s --health-retries=3
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
-          extensions: mbstring, intl, sqlite3, mysqli, pdo_mysql
+          extensions: mbstring, intl, mysqli
           coverage: xdebug
 
       - name: Install dependencies
@@ -36,16 +39,9 @@ jobs:
       - name: Wait for MySQL to be ready
         run: |
           echo "Waiting for MySQL to be ready..."
-          until mysqladmin ping -h"127.0.0.1" --silent; do
-            sleep 1
+          until mysql -h 127.0.0.1 -u root -e "SHOW DATABASES;"; do
+            sleep 5
           done
 
-      - name: Configure Database for CodeIgniter
-        run: |
-          # Connect to MySQL and create the database if it doesn't exist
-          mysql -u root -proot_password -e "CREATE DATABASE IF NOT EXISTS tests;"
-          # Si tu utilises des migrations, exécute-les ici
-          php spark migrate --force
-
-      - name: Run PHPUnit
+      - name: Run PHPUnit tests
         run: vendor/bin/phpunit --configuration phpunit.xml.dist --testsuite default
