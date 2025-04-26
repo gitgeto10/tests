@@ -80,4 +80,4 @@ jobs:
           echo "database.tests.port = 3306" >> .env
 
       - name: Run PHPUnit tests
-        run: ./vendor/bin/phpunit --coverage-text tests/UserModelTest.php
+        run: ./vendor/bin/phpunit --coverage-text tests/Models/UserModelTest.php
