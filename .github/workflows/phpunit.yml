@@ -12,16 +12,6 @@ jobs:
   php-tests:
     runs-on: ubuntu-latest
 
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: ""  # Mot de passe vide
-          MYSQL_DATABASE: tests    # Nom de la base de données
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping --silent" --health-start-period=30s --health-timeout=30s --health-retries=3
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -45,3 +35,4 @@ jobs:
 
       - name: Run PHPUnit tests
         run: vendor/bin/phpunit --configuration phpunit.xml.dist --testsuite default
+
