@@ -1,4 +1,4 @@
-name: PHPUnit Tests UserModel + BonLivraisonModel
+name: PHPUnit Tests
 
 on:
   push:
@@ -33,68 +33,45 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1.2'
-          extensions: mbstring, intl, pdo_mysql, mysqli, xdebug
-          coverage: xdebug
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v3
-        with:
-          path: vendor
-          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            composer-${{ runner.os }}-
+          php-version: '8.1'
+          extensions: mbstring, intl, pdo_mysql, mysqli
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist
 
-      - name: Debug PHPUnit version
-        run: ./vendor/bin/phpunit --version
-
       - name: Wait for MySQL to be ready
         run: |
-          echo "Waiting for MySQL to be ready..."
           for i in {1..30}; do
             if mysqladmin ping -h 127.0.0.1 -P 3306 -u root --silent; then
-              echo "MySQL is ready!"
               break
             fi
-            echo "MySQL not ready yet, waiting..."
             sleep 2
           done
 
       - name: Create necessary tables
         run: |
-          mysql -h 127.0.0.1 -P 3306 -u root tests -e "
-          CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL
-          );
-          CREATE TABLE IF NOT EXISTS bonlivraison (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            status VARCHAR(50) NOT NULL,
-            delivery_date DATE NOT NULL
-          );
+          mysql -h 127.0.0.1 -u root tests -e "
+            CREATE TABLE IF NOT EXISTS users (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              name VARCHAR(255) NOT NULL,
+              email VARCHAR(255) NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS bonlivraison (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              status VARCHAR(50) NOT NULL,
+              delivery_date DATE NOT NULL
+            );
           "
 
-      - name: Configure database connection
+      - name: Set database connection
         run: |
-          echo "Setting up database connection"
-          echo "database.default.hostname = 127.0.0.1" >> .env
-          echo "database.default.username = root" >> .env
-          echo "database.default.password = " >> .env
-          echo "database.default.database = tests" >> .env
-          echo "database.default.DBDriver = MySQLi" >> .env
-          echo "database.default.port = 3306" >> .env
-          echo "database.tests.hostname = 127.0.0.1" >> .env
-          echo "database.tests.username = root" >> .env
-          echo "database.tests.password = " >> .env
-          echo "database.tests.database = tests" >> .env
-          echo "database.tests.DBDriver = MySQLi" >> .env
-          echo "database.tests.port = 3306" >> .env
+          echo "
+          database.default.hostname = 127.0.0.1
+          database.default.username = root
+          database.default.password =
+          database.default.database = tests
+          database.default.DBDriver = MySQLi
+          " >> .env
 
-      - name: Run PHPUnit tests
-        run: |
-          ./vendor/bin/phpunit --coverage-text tests/Models/UserModelTest.php
-          ./vendor/bin/phpunit --coverage-text tests/Models/BonLivraisonModelTest.php
+      - name: Run all PHPUnit tests
+        run: ./vendor/bin/phpunit
