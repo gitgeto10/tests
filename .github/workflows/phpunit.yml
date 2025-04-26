@@ -1,4 +1,4 @@
-name: PHPUnit Tests UserModel + BonLivraisonModel
+name: PHPUnit Tests UserModel + BonLivraisonModel + LigneBonLivraisonModel
 
 on:
   push:
@@ -69,6 +69,12 @@ jobs:
             status VARCHAR(50) NOT NULL,
             delivery_date DATE NOT NULL
           );
+          CREATE TABLE IF NOT EXISTS lignebonlivraison (
+            id int(11) NOT NULL,
+            id_bonlivraison int(11) DEFAULT NULL,
+            designation varchar(255) DEFAULT NULL,
+            quantity int(11) DEFAULT NULL
+          )
           EOF
       
       - name: Configure environment
@@ -85,5 +91,7 @@ jobs:
       - name: Run PHPUnit tests
         run: |
           ./vendor/bin/phpunit --coverage-text tests/Models/UserModelTest.php
-          ./vendor/bin/phpunit --coverage-text tests/Models/BonLivraisonModelTest.php 
+          ./vendor/bin/phpunit --coverage-text tests/Models/BonLivraisonModelTest.php
+          ./vendor/bin/phpunit --coverage-text tests/Models/LigneBonLivraisonModelTest.php 
+ 
       
