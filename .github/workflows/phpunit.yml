@@ -1,4 +1,4 @@
-name: PHP Tests with MySQL
+name: PHPUnit Tests
 
 on:
   push:
@@ -9,40 +9,75 @@ on:
       - main
 
 jobs:
-  php-tests:
+  test:
     runs-on: ubuntu-latest
 
     services:
       mysql:
-        image: mysql:5.7
+        image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: ""
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
           MYSQL_DATABASE: tests
-          MYSQL_USER: root
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping --silent" --health-timeout=5s --health-retries=3
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
-          extensions: mbstring, intl, mysqli
+          php-version: '8.2'
+          extensions: mbstring, intl, pdo_mysql, mysqli, xdebug
           coverage: xdebug
 
-      - name: Install dependencies
-        run: composer install --no-progress --prefer-dist
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-${{ runner.os }}-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Debug PHPUnit version
+        run: ./vendor/bin/phpunit --version
 
       - name: Wait for MySQL to be ready
         run: |
           echo "Waiting for MySQL to be ready..."
-          until mysql -h 127.0.0.1 -u root  -e "SHOW DATABASES;"; do
-            sleep 5
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -u root --silent; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "MySQL not ready yet, waiting..."
+            sleep 2
           done
 
+      - name: Configure database connection
+        run: |
+          echo "Setting up database connection"
+          echo "database.default.hostname = 127.0.0.1" >> .env
+          echo "database.default.username = root" >> .env
+          echo "database.default.password = " >> .env
+          echo "database.default.database = tests" >> .env
+          echo "database.default.DBDriver = MySQLi" >> .env
+          echo "database.default.port = 3306" >> .env
+          echo "database.tests.hostname = 127.0.0.1" >> .env
+          echo "database.tests.username = root" >> .env
+          echo "database.tests.password = " >> .env
+          echo "database.tests.database = tests" >> .env
+          echo "database.tests.DBDriver = MySQLi" >> .env
+          echo "database.tests.port = 3306" >> .env
+
       - name: Run PHPUnit tests
-        run: vendor/bin/phpunit --configuration phpunit.xml.dist --testsuite default
+        run: ./vendor/bin/phpunit --coverage-text tests/UserModelTest.php

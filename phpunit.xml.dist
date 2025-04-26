@@ -50,12 +50,12 @@
         <const name="CONFIGPATH" value="./app/Config/"/>
         <!-- Directory containing the front controller (index.php) -->
         <const name="PUBLICPATH" value="./public/"/>
-        <!-- Database configuration -->
+        <!-- Database configuration
         <env name="DB.default.hostname" value="127.0.0.1"/>
         <env name="DB.default.database" value="tests"/>
         <env name="DB.default.username" value="root"/>
         <env name="DB.default.password" value=""/>
         <env name="DB.default.DBDriver" value="MySQLi"/>
-        <env name="DB.default.DBPrefix" value=""/>
+        <env name="DB.default.DBPrefix" value=""/> -->
     </php>
 </phpunit>
